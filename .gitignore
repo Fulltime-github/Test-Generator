@@ -1,0 +1,7 @@
+.idea/*
+.*
+log/*
+target/**
+*.log
+*.iml
+*-lock.json
