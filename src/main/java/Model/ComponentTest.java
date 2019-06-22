@@ -9,7 +9,7 @@ public class ComponentTest {
     private String testAct;
     private String testAssert;
     private String ComponentTestFilepath;
-    private String ComponentTestCompleteSourceCode;
+    private String ComponentTestSourceCode;
 
     private List<String> nextTest = new ArrayList<>();
     private List<String> previousTest = new ArrayList<>();
@@ -46,12 +46,12 @@ public class ComponentTest {
         ComponentTestFilepath = componentTestFilepath;
     }
 
-    public String getComponentTestCompleteSourceCode() {
-        return ComponentTestCompleteSourceCode;
+    public String getComponentTestSourceCode() {
+        return ComponentTestSourceCode;
     }
 
-    public void setComponentTestCompleteSourceCode(String componentTestCompleteSourceCode) {
-        ComponentTestCompleteSourceCode = componentTestCompleteSourceCode;
+    public void setComponentTestSourceCode(String componentTestSourceCode) {
+        ComponentTestSourceCode = componentTestSourceCode;
     }
 
     public List<String> getNextTest() {
