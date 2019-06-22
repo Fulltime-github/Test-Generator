@@ -8,12 +8,32 @@ public class Component {
     private String name;
     private String ComponentSourceCodeFilepath;
     private String ComponentSourceCode;
-    private String ComponentTestFilepath;
-    private String ComponentTestSourceCode;
-    private List<String> InputEvents = new ArrayList<>();
-    private List<String> OutputEvents = new ArrayList<>();
+    private List<Event> InputEvents = new ArrayList<>();
+    private List<Event> OutputEvents = new ArrayList<>();
     private List<Component> previous = new ArrayList<>();
     private List<Component> next = new ArrayList<>();
+    private List<ComponentTest> componentTests = new ArrayList<>();
+    private List<ComponentTest> integrationTests = new ArrayList<>();
+
+    public List<ComponentTest> getIntegrationTests() {
+        return integrationTests;
+    }
+
+    public void setIntegrationTests(List<ComponentTest> integrationTests) {
+        this.integrationTests = integrationTests;
+    }
+
+    public List<ComponentTest> getComponentTests() {
+        return componentTests;
+    }
+
+    public void setComponentTests(List<ComponentTest> componentTests) {
+        this.componentTests = componentTests;
+    }
+
+    public void addComponentTest(ComponentTest componentTest) {
+        this.componentTests.add(componentTest);
+    }
 
     public String getComponentSourceCodeFilepath() {
         return ComponentSourceCodeFilepath;
@@ -60,43 +80,32 @@ public class Component {
         return name + "-test.ts";
     }
 
-    public String getComponentTestFilepath() {
-        return ComponentTestFilepath;
-    }
-
-    public void setComponentTestFilepath(String componentTestFilepath) {
-        ComponentTestFilepath = componentTestFilepath;
-    }
-
-    public String getComponentTestSourceCode() {
-        return ComponentTestSourceCode;
-    }
-
-    public void setComponentTestSourceCode(String componentTestSourceCode) {
-        ComponentTestSourceCode = componentTestSourceCode;
-    }
-
     public String getName() {
         return name;
+    }
+
+
+    public String getSourceCodeFileName() {
+        return name +  ".ts";
     }
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public List<String> getInputEvents() {
+    public List<Event> getInputEvents() {
         return InputEvents;
     }
 
-    public void setInputEvents(List<String> inputEvents) {
+    public void setInputEvents(List<Event> inputEvents) {
         InputEvents = inputEvents;
     }
 
-    public List<String> getOutputEvents() {
+    public List<Event> getOutputEvents() {
         return OutputEvents;
     }
 
-    public void setOutputEvents(List<String> outputEvents) {
+    public void setOutputEvents(List<Event> outputEvents) {
         OutputEvents = outputEvents;
     }
 }
