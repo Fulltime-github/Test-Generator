@@ -1,5 +1,7 @@
 package Model;
 
+import Model.IntegrationTests.IntegrationTestWeakOracle;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -8,18 +10,19 @@ public class Component {
     private String name;
     private String ComponentSourceCodeFilepath;
     private String ComponentSourceCode;
+    private String componentInitializationHtml;
     private List<Event> InputEvents = new ArrayList<>();
     private List<Event> OutputEvents = new ArrayList<>();
     private List<Component> previous = new ArrayList<>();
     private List<Component> next = new ArrayList<>();
     private List<ComponentTest> componentTests = new ArrayList<>();
-    private List<ComponentTest> integrationTests = new ArrayList<>();
+    private List<IntegrationTestWeakOracle> integrationTests = new ArrayList<>();
 
-    public List<ComponentTest> getIntegrationTests() {
+    public List<IntegrationTestWeakOracle> getIntegrationTests() {
         return integrationTests;
     }
 
-    public void setIntegrationTests(List<ComponentTest> integrationTests) {
+    public void setIntegrationTests(List<IntegrationTestWeakOracle> integrationTests) {
         this.integrationTests = integrationTests;
     }
 
@@ -76,8 +79,8 @@ public class Component {
         this.previous.add(next);
     }
 
-    public String getComponentTestFilename() {
-        return name + "-test.ts";
+    public String getComponentEventTestFilename() {
+        return name + "-event-test.ts";
     }
 
     public String getName() {
@@ -107,5 +110,13 @@ public class Component {
 
     public void setOutputEvents(List<Event> outputEvents) {
         OutputEvents = outputEvents;
+    }
+
+    public String getComponentInitializationHtml() {
+        return componentInitializationHtml;
+    }
+
+    public void setComponentInitializationHtml(String componentInitializationHtml) {
+        this.componentInitializationHtml = componentInitializationHtml;
     }
 }

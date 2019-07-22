@@ -5,15 +5,15 @@ import java.util.List;
 
 public class FileSearch {
 
-    private String fileNameToSearch;
+    private String fileNameToSearchIfContains;
     private List<String> result = new ArrayList<String>();
 
-    public String getFileNameToSearch() {
-        return fileNameToSearch;
+    public String getFileNameToSearchIfContains() {
+        return fileNameToSearchIfContains;
     }
 
-    public void setFileNameToSearch(String fileNameToSearch) {
-        this.fileNameToSearch = fileNameToSearch;
+    public void setFileNameToSearchIfContains(String fileNameToSearchIfContains) {
+        this.fileNameToSearchIfContains = fileNameToSearchIfContains;
     }
 
     public List<String> getResult() {
@@ -22,7 +22,7 @@ public class FileSearch {
 
     public void searchDirectory(File directory, String fileNameToSearch) {
 
-        setFileNameToSearch(fileNameToSearch);
+        setFileNameToSearchIfContains(fileNameToSearch);
 
         if (directory.isDirectory()) {
             search(directory);
@@ -43,7 +43,7 @@ public class FileSearch {
                     if (temp.isDirectory()) {
                         search(temp);
                     } else {
-                        if (getFileNameToSearch().equals(temp.getName().toLowerCase())) {
+                        if (temp.getName().toLowerCase().contains(getFileNameToSearchIfContains())) {
                             result.add(temp.getAbsoluteFile().toString());
                         }
 

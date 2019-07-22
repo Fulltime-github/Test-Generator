@@ -1,6 +1,8 @@
 import Model.Component;
 import Model.ComponentTest;
 import Model.Event;
+import Model.IntegrationTests.IntegrationTestCouplingTests;
+import Model.IntegrationTests.IntegrationTestWeakOracle;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.apache.log4j.Logger;
 import org.openqa.selenium.By;
@@ -28,10 +30,11 @@ public class Generator {
     private final static String EVENT_TYPE_TAG = "@type";
     private final static String EVENT_DATA_OBJECT_TAG = "@dataObject";
     private final static String EVENT_LISTENER_TAG = "addEventListener(\"";
+    private final static String TEST_INTERFACE_NAME = "IComponentTest";
+    private final static String COMPONENT_TEST_FILENAME_ENDING = "test.ts";
     /**
      * END CONFIG GENERATOR
      */
-
 
     private WebDriver driver;
     private ArrayList<Component> microFrontends = new ArrayList<Component>();
@@ -55,11 +58,83 @@ public class Generator {
         driver.get("http://localhost:8080/");
         analyseFeatures();
         mappingFeatures();
+        combineTests();
 
     }
 
     private void combineTests() {
+        logger.info("\n\n\n");
+        logger.info("##########################################################");
+        logger.info("##########################################################");
+        logger.info("###############   Generating PHASE   #####################");
+        logger.info("##########################################################");
+        logger.info("##########################################################");
+        logger.info("Start Combine Fragments");
+        if(microFrontends.size() > 0) {
+            // Iterate Through all Components
+            logger.info("Found: " + microFrontends.size() + " Components in ORD to check");
+            for (Component systemUnderTest : microFrontends) {
+                this.createWeakOracleIntegrationTest(systemUnderTest);
 
+                for (ComponentTest sutComponentTest: systemUnderTest.getComponentTests()) {
+                    logger.info("Search for Matching Tests for Test: " + sutComponentTest.getClassName());
+                    Event sutTestEvent = sutComponentTest.getEvent();
+                    // Iterate Through all Previous Components (all Components the SUT is dependent on)
+                    for (Component previousComponent: systemUnderTest.getPrevious()) {
+                        logger.info("Searching for tests in Component : " + previousComponent.getName());
+                        IntegrationTestCouplingTests integrationTest = null;
+                        // Search for those Tests which matching the Input Event
+                        for (ComponentTest depComponentTest : previousComponent.getComponentTests()) {
+                            Event depTestEvent = depComponentTest.getEvent();
+                            if(!sutTestEvent.getType().equals(depTestEvent.getType())) {
+                                if(integrationTest == null) {
+                                    integrationTest = new IntegrationTestCouplingTests(systemUnderTest, previousComponent);
+                                    integrationTest.addTestCaseCoupleTest(sutComponentTest, depComponentTest);
+                                }
+                            }
+                        }
+                        integrationTest.printToFile(integrationTest.getIntegrationTestCoupleTestsCode());
+                    }
+                }
+            }
+        }
+    }
+
+    private void createWeakOracleIntegrationTest(Component systemUnderTest) {
+        logger.info("*******************************************************************");
+        logger.info("Start to create Integationtests for SUT: " + systemUnderTest.getName());
+        logger.info("SUT depends on : " + systemUnderTest.getPrevious().size() + " Component-event/s");
+        logger.info("SUT has : " + systemUnderTest.getInputEvents().size() + " Input Events");
+        // Iterate Through all Input Events
+        for (Event inputEvent : systemUnderTest.getInputEvents()) {
+            logger.info("Search for Matching Tests for Event: " + inputEvent.getName());
+            // Iterate Through all Previous Components (all Components the SUT is dependent on)
+            for (Component previousComponent : systemUnderTest.getPrevious()) {
+                logger.info("Searching for tests in Component : " + previousComponent.getName());
+                IntegrationTestWeakOracle integrationTest = null;
+                // Search for those Tests which matching the Input Event
+                for (ComponentTest depComponentTest : previousComponent.getComponentTests()) {
+                    if(depComponentTest.getEvent().getName().equals(inputEvent.getName())) {
+                        if(integrationTest == null) {
+                            integrationTest = new IntegrationTestWeakOracle(systemUnderTest, previousComponent);;
+                            systemUnderTest.getIntegrationTests().add(integrationTest);
+                        }
+                        logger.info("Found Matching Test Class: " + depComponentTest.getClassName() + " to Component: " + systemUnderTest.getName() + " With Event: " + inputEvent.getName());
+                        integrationTest.addTestCase(depComponentTest);
+                    }
+                }
+                integrationTest.printToFile(integrationTest.getIntegrationTestCode());
+            }
+        }
+        logger.info("*******************************************************************");
+    }
+
+    private void createTestCaseForIntegrationTest(IntegrationTestWeakOracle integrationTest, Component dependentCompenent, ComponentTest dependentComponentTest) {
+        integrationTest.addTestCase(dependentComponentTest);
+
+        logger.info("CREATED INTEGRATIONTEST: ");
+        logger.info(integrationTest.getIntegrationTestCode());
+        logger.info("---------+++++++++++++######################");
     }
 
     private void mappingFeatures() {
@@ -130,38 +205,16 @@ public class Generator {
             logger.info("##########################################################");
             logger.info("##########################################################");
             logger.info("Found MicroFrontend: " + element.getTagName());
+            logger.info("Save Initialization: " + element.getAttribute("outerHTML"));
             Component microFrontend = new Component();
+            microFrontend.setComponentInitializationHtml(element.getAttribute("outerHTML").replace("\"", "\\\""));
             microFrontend.setName(element.getTagName());
 
-            //SEARCHING FOR COMPONENT TESTS
-            FileSearch fs = new FileSearch();
-            logger.info("Search for Testfile: " + microFrontend.getComponentTestFilename());
-            fs.searchDirectory(new File(PROGRAM_DIRECTORY), microFrontend.getComponentTestFilename());
-            int count = fs.getResult().size();
-            if(count ==0) {
-                logger.info("No Testfile found for Test: ");
-            } else {
-                logger.info("Found " + count + " Test File/s");
-                for (String matched : fs.getResult()) {
-                    ComponentTest componentTest = new ComponentTest();
-                    componentTest.setComponentTestFilepath(matched);
-                    logger.info("Saved Test File Filepath: " + matched);
-                    String content = null;
-                    try {
-                        componentTest.setComponentTestSourceCode(Files.readString(Paths.get(matched)));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-
-                    microFrontend.addComponentTest(componentTest);
-                }
-            }
-
             //SEARCHING FOR SOURCE CODE
-            fs = new FileSearch();
+            FileSearch fs = new FileSearch();
             logger.info("Search for Source Code File: " + microFrontend.getSourceCodeFileName());
             fs.searchDirectory(new File(PROGRAM_DIRECTORY), microFrontend.getSourceCodeFileName());
-            count = fs.getResult().size();
+            int count = fs.getResult().size();
             if(count ==0) {
                 logger.info("No Source Code found for Source Code Filename: " + microFrontend.getSourceCodeFileName());
             } else {
@@ -172,31 +225,69 @@ public class Generator {
                     try {
                         String content = Files.readString(Paths.get(matched));
                         microFrontend.setComponentSourceCode(content);
-                        logger.info("________________________________________________");
-                        logger.info("Search for INPUT AND OUTPUT CUSTOM EVENTS");
-                        logger.info("INPUT CUSTOM EVENTS: " + element.getTagName());
-                        microFrontend.setInputEvents(findInputEvents(microFrontend));
-                        logger.info("INPUT EVENTS: " + microFrontend.getInputEvents().size());
-                        logger.info("OUTPUT CUSTOM EVENTS: " + element.getTagName());
-                        microFrontend.setOutputEvents(findOutputEvents(microFrontend));
-                        logger.info("OUTPUT EVENTS: " + microFrontend.getOutputEvents().size());
-                        logger.info("_________________________________________________");
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
                 }
             }
-            microFrontends.add(microFrontend);
+
+            //SEARCHING FOR COMPONENT TESTS
+            fs = new FileSearch();
+            if(microFrontend.getComponentSourceCodeFilepath() != null) {
+                String sourceCodeDir = microFrontend.getComponentSourceCodeFilepath();
+                String testDirectory = sourceCodeDir.substring(0, sourceCodeDir.lastIndexOf('\\') + 1);
+                logger.info("Search for Testfile in Source Directory: " + testDirectory);
+
+                fs.searchDirectory(new File(testDirectory), COMPONENT_TEST_FILENAME_ENDING);
+                count = fs.getResult().size();
+                if (count == 0) {
+                    logger.info("No Testfile found for Test: ");
+                } else {
+                    logger.info("Found " + count + " Test File/s");
+                    for (String matched : fs.getResult()) {
+                        ComponentTest componentTest = new ComponentTest();
+                        componentTest.setComponentTestFilepath(matched);
+                        componentTest.setComponentTestFilename(matched.substring(matched.lastIndexOf('\\') + 1));
+                        String content = null;
+                        try {
+                            componentTest.setComponentTestSourceCode(Files.readString(Paths.get(matched)));
+                            if (!Files.readString(Paths.get(matched)).contains(TEST_INTERFACE_NAME)) {
+                                logger.info("SKIP Test Class: " + componentTest.getClassName() + " - It doesn't implement Interface: " + TEST_INTERFACE_NAME);
+                            } else {
+                                logger.info("Found Test Classname: " + componentTest.getClassName() + " with Implementation of " + TEST_INTERFACE_NAME);
+                                logger.info("Saved Test File Filepath: " + matched);
+                                microFrontend.addComponentTest(componentTest);
+                            }
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+                logger.info("________________________________________________");
+                logger.info("Search for INPUT AND OUTPUT CUSTOM EVENTS");
+                microFrontend.setInputEvents(findInputEvents(microFrontend));
+                logger.info("INPUT EVENTS: " + microFrontend.getInputEvents().size());
+                logger.info("OUTPUT CUSTOM EVENTS: " + element.getTagName());
+                microFrontend.setOutputEvents(findEvents(microFrontend));
+                logger.info("OUTPUT EVENTS: " + microFrontend.getOutputEvents().size());
+                logger.info("_________________________________________________");
+                microFrontends.add(microFrontend);
+            } else {
+                logger.info("Couldn't find Tests and Events because no Source Code for " + microFrontend.getName());
+            }
         }
     }
 
-    private List<Event> findOutputEvents(Component microFrontend) {
+
+
+    private List<Event> findEvents(Component microFrontend) {
         int start;
         ArrayList<Event> results = new ArrayList();
 
         //String componentTest = microFrontend.getSourceCodeFileName();
         for (ComponentTest componentTest:microFrontend.getComponentTests()) {
-            String componentTestSourceCode = componentTest.getComponentTestSourceCode().replaceAll("\n", ""   ).replaceAll("\\s+","");;
+            String componentTestSourceCode = componentTest.getComponentTestSourceCode();
             if(componentTestSourceCode.contains(EVENT_NAME_TAG)) {
                 while (componentTestSourceCode.contains(EVENT_NAME_TAG)) {
 
@@ -215,25 +306,32 @@ public class Generator {
 
                     String eventDeclarationPart = eventText.substring(eventText.indexOf(EVENT_TYPE_TAG));
                     String eventType = eventDeclarationPart.substring(eventDeclarationPart.indexOf(EVENT_TYPE_TAG) + EVENT_TYPE_TAG.length()+1, eventDeclarationPart.indexOf("*"));
+                    if(eventType.toLowerCase().equals("input")) {
+                        event.setType("input");
+                    } else if (eventType.toLowerCase().equals("output")) {
+                        event.setType("output");
+                    } else {
+                        logger.error("CHECK EVENT TYPE FROM TEST: " + componentTest.getClassName() + " FROM COMPONENT: " + microFrontend.getName());
+                    }
+                    event.setType(eventType);
+
+                    eventDeclarationPart = eventText.substring(eventText.indexOf(EVENT_NAME_TAG));
+                    String eventName = eventDeclarationPart.substring(eventDeclarationPart.indexOf(EVENT_NAME_TAG) + EVENT_NAME_TAG.length() + 1, eventDeclarationPart.indexOf("*"));
+                    event.setName(eventName);
+
+                    eventDeclarationPart = eventText.substring(eventText.indexOf(EVENT_DATA_OBJECT_TAG));
+                    event.setDataObject(eventDeclarationPart.substring(eventDeclarationPart.indexOf(EVENT_DATA_OBJECT_TAG) + EVENT_DATA_OBJECT_TAG.length() + 1, eventDeclarationPart.indexOf("*")));
+
+                    logger.info("FOUND EVENT: " + event.getName());
+                    logger.info("EVENT TYP: " + event.getType());
+                    logger.info("ADD EVENT TO TEST");
+                    componentTest.setEvent(event);
                     if(eventType.equals("output")) {
-                        event.setType(eventType);
-
-                        eventDeclarationPart = eventText.substring(eventText.indexOf(EVENT_NAME_TAG));
-                        String eventName = eventDeclarationPart.substring(eventDeclarationPart.indexOf(EVENT_NAME_TAG) + EVENT_NAME_TAG.length() + 1, eventDeclarationPart.indexOf("*"));
-                        event.setName(eventName);
-
-
-                        eventDeclarationPart = eventText.substring(eventText.indexOf(EVENT_DATA_OBJECT_TAG));
-                        event.setDataObject(eventDeclarationPart.substring(eventDeclarationPart.indexOf(EVENT_DATA_OBJECT_TAG) + EVENT_DATA_OBJECT_TAG.length() + 1, eventDeclarationPart.indexOf("*")));
-
-
-                        logger.info("FOUND OUTPUT EVENT: " + event.getName());
+                        logger.info("ADD EVENT TO COMPONENT");
                         results.add(event);
                     }
-
                 }
             }
-
         }
         return results;
     }
@@ -253,7 +351,6 @@ public class Generator {
             event.setName(customEvent);
             logger.info("FOUND INPUT EVENT: " + event.getName());
             results.add(event);
-
         }
         return results;
     }
