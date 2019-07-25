@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ComponentTest {
-    private final static Logger logger = Logger.getLogger(ComponentTest.class);
+    private final static Logger logger = Logger.getLogger("Generator");
     private String testArrange;
     private String testAct;
     private String testAssert;

@@ -2,11 +2,8 @@ package Model.IntegrationTests;
 
 import Model.Component;
 import Model.ComponentTest;
-import org.apache.log4j.Logger;
 
 public class IntegrationTestWeakOracle extends BaseIntegrationTest {
-
-    final static Logger logger = Logger.getLogger(IntegrationTestWeakOracle.class);
 
     public IntegrationTestWeakOracle(Component systemUnderTest, Component dependentComponent) {
         super(systemUnderTest, dependentComponent);

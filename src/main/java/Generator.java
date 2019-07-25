@@ -38,13 +38,14 @@ public class Generator {
 
     private WebDriver driver;
     private ArrayList<Component> microFrontends = new ArrayList<Component>();
-    private final static Logger logger = Logger.getLogger(Generator.class);
+    private final static Logger logger = Logger.getLogger(Generator.class.getName());
 
 
     public void start(String[] args) {
 
         logger.info("\n\n\n");
         logger.info("##########################################################");
+        logger.info(Generator.class.getName());
         logger.info("##########################################################");
         logger.info("###############   START TEST GENERATOR ###################");
         logger.info("##########################################################");
@@ -74,82 +75,87 @@ public class Generator {
             // Iterate Through all Components
             logger.info("Found: " + microFrontends.size() + " Components in ORD to check");
             for (Component systemUnderTest : microFrontends) {
-                this.createWeakOracleIntegrationTest(systemUnderTest);
 
-                for (ComponentTest sutComponentTest: systemUnderTest.getComponentTests()) {
-                    logger.info("Search for Matching Tests for Test: " + sutComponentTest.getClassName());
-                    Event sutTestEvent = sutComponentTest.getEvent();
-                    // Iterate Through all Previous Components (all Components the SUT is dependent on)
-                    for (Component previousComponent: systemUnderTest.getPrevious()) {
-                        logger.info("Searching for tests in Component : " + previousComponent.getName());
-                        IntegrationTestCouplingTests integrationTest = null;
-                        // Search for those Tests which matching the Input Event
-                        for (ComponentTest depComponentTest : previousComponent.getComponentTests()) {
-                            Event depTestEvent = depComponentTest.getEvent();
-                            if(!sutTestEvent.getType().equals(depTestEvent.getType())) {
-                                if(integrationTest == null) {
-                                    integrationTest = new IntegrationTestCouplingTests(systemUnderTest, previousComponent);
-                                    integrationTest.addTestCaseCoupleTest(sutComponentTest, depComponentTest);
-                                }
-                            }
-                        }
-                        integrationTest.printToFile(integrationTest.getIntegrationTestCoupleTestsCode());
-                    }
-                }
+                this.createWeakOracleIntegrationTest(systemUnderTest);
+                this.createCoupleAllPhasesIntegrationTest(systemUnderTest);
             }
         }
     }
 
+    private void createCoupleAllPhasesIntegrationTest(Component systemUnderTest) {
+        logger.info("##########################################################");
+        logger.info("Search for Weak Oracle Integationtests for SUT: " + systemUnderTest.getName());
+        logger.info("SUT depends on : " + systemUnderTest.getPrevious().size() + " Component-event/s");
+        logger.info("SUT has : " + systemUnderTest.getInputEvents().size() + " Input Events");
+
+        for (ComponentTest sutComponentTest: systemUnderTest.getComponentTests()) {
+            logger.info("Search for Matching Tests for Test: " + sutComponentTest.getClassName());
+            Event sutTestEvent = sutComponentTest.getEvent();
+            // Iterate Through all Previous Components (all Components the SUT is dependent on)
+            for (Component previousComponent: systemUnderTest.getPrevious()) {
+                logger.info("Searching for tests in Component : " + previousComponent.getName());
+                IntegrationTestCouplingTests integrationTest = null;
+                // Search for those Tests which matching the Input Event
+                for (ComponentTest depComponentTest : previousComponent.getComponentTests()) {
+                    Event depTestEvent = depComponentTest.getEvent();
+                    if(!sutTestEvent.getType().equals(depTestEvent.getType())) {
+                        if(integrationTest == null) {
+                            integrationTest = new IntegrationTestCouplingTests(systemUnderTest, previousComponent);
+                            integrationTest.addTestCaseCoupleTest(sutComponentTest, depComponentTest);
+                        }
+                    }
+                }
+                integrationTest.printToFile(integrationTest.getIntegrationTestCoupleTestsCode());
+            }
+        }
+    }
     private void createWeakOracleIntegrationTest(Component systemUnderTest) {
-        logger.info("*******************************************************************");
-        logger.info("Start to create Integationtests for SUT: " + systemUnderTest.getName());
+        logger.info("##########################################################");
+        logger.info("Search for Weak Oracle Integationtests for SUT: " + systemUnderTest.getName());
         logger.info("SUT depends on : " + systemUnderTest.getPrevious().size() + " Component-event/s");
         logger.info("SUT has : " + systemUnderTest.getInputEvents().size() + " Input Events");
         // Iterate Through all Input Events
         for (Event inputEvent : systemUnderTest.getInputEvents()) {
-            logger.info("Search for Matching Tests for Event: " + inputEvent.getName());
             // Iterate Through all Previous Components (all Components the SUT is dependent on)
             for (Component previousComponent : systemUnderTest.getPrevious()) {
-                logger.info("Searching for tests in Component : " + previousComponent.getName());
+                logger.info("Search for matching Events In Component Tests of: " + previousComponent.getName());
                 IntegrationTestWeakOracle integrationTest = null;
                 // Search for those Tests which matching the Input Event
                 for (ComponentTest depComponentTest : previousComponent.getComponentTests()) {
                     if(depComponentTest.getEvent().getName().equals(inputEvent.getName())) {
+                        logger.info("");
+                        logger.info("Found Matching Event: " +  inputEvent.getName() + " in Test Class: " + depComponentTest.getClassName() + " of Component: " + systemUnderTest.getName());
                         if(integrationTest == null) {
                             integrationTest = new IntegrationTestWeakOracle(systemUnderTest, previousComponent);;
                             systemUnderTest.getIntegrationTests().add(integrationTest);
                         }
-                        logger.info("Found Matching Test Class: " + depComponentTest.getClassName() + " to Component: " + systemUnderTest.getName() + " With Event: " + inputEvent.getName());
                         integrationTest.addTestCase(depComponentTest);
                     }
                 }
                 integrationTest.printToFile(integrationTest.getIntegrationTestCode());
             }
         }
-        logger.info("*******************************************************************");
+        logger.info("##########################################################");
     }
 
     private void createTestCaseForIntegrationTest(IntegrationTestWeakOracle integrationTest, Component dependentCompenent, ComponentTest dependentComponentTest) {
         integrationTest.addTestCase(dependentComponentTest);
-
-        logger.info("CREATED INTEGRATIONTEST: ");
-        logger.info(integrationTest.getIntegrationTestCode());
-        logger.info("---------+++++++++++++######################");
+        logger.info("INTEGRATIONTEST CREATED");
     }
 
     private void mappingFeatures() {
 
         logger.info("\n\n\n");
-        logger.info("##########################################################");
-        logger.info("##########################################################");
-        logger.info("###############   MAPPING FEATURES PHASE #################");
-        logger.info("##########################################################");
-        logger.info("##########################################################");
+        logger.info("################################################");
+        logger.info("################################################");
+        logger.info("####### ANALYSE MAPPING FEATURES PHASE #########");
+        logger.info("################################################");
+        logger.info("################################################");
         logger.info("Start MAPPING");
         if(microFrontends.size() > 0) {
             for (Component microFrontend:microFrontends) {
-                logger.info("##########################################################");
-                logger.info("##########################################################");
+                logger.info("################################################");
+                logger.info("################################################");
                 logger.info("Start with Microfrontend: " + microFrontend.getName());
                 logger.info("SEARCH FOR SUCCESSOR AND PREDECESSOR: " + microFrontend.getName());
                 for (Component compareWithMicrofrontend: microFrontends) {
@@ -195,15 +201,15 @@ public class Generator {
 
         logger.info("##########################################################");
         logger.info("##########################################################");
-        logger.info("###############   ANALYZE FEATURES PHASE ####################");
+        logger.info("#################### Identify PHASE ######################");
         logger.info("##########################################################");
         logger.info("##########################################################");
         logger.info("Search for Custom Elements");
         List<WebElement> elements = driver.findElements(By.xpath("//*[contains(local-name(), '-')]"));
         logger.info("FOUND " + elements.size() + " Custom Elements");
         for (WebElement element:elements) {
-            logger.info("##########################################################");
-            logger.info("##########################################################");
+            logger.info("################################################");
+            logger.info("################################################");
             logger.info("Found MicroFrontend: " + element.getTagName());
             logger.info("Save Initialization: " + element.getAttribute("outerHTML"));
             Component microFrontend = new Component();

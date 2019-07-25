@@ -2,11 +2,8 @@ package Model.IntegrationTests;
 
 import Model.Component;
 import Model.ComponentTest;
-import org.apache.log4j.Logger;
 
 public class IntegrationTestCouplingTests extends BaseIntegrationTest {
-
-    final static Logger logger = Logger.getLogger(IntegrationTestCouplingTests.class);
 
     public IntegrationTestCouplingTests(Component systemUnderTest, Component dependentComponent) {
         super(systemUnderTest, dependentComponent);

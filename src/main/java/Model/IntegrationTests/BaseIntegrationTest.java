@@ -11,18 +11,17 @@ import java.util.List;
 import java.util.Random;
 
 abstract class BaseIntegrationTest {
-    private final static Logger logger = Logger.getLogger(BaseIntegrationTest.class);
+    private final static Logger logger = Logger.getLogger("Generator");
 
-    List<String> testDependencies = new ArrayList<>();
+    private List<String> testDependencies = new ArrayList<>();
     List<TestCase> testCases = new ArrayList<>();
     Component sutComponent;
-    Component depComponent;
-    String filepath = "";
-    String fileName = "";
-    int testNumber = 0;
+    private Component depComponent;
+    private String filepath;
+    private String fileName;
+    int testNumber;
 
     BaseIntegrationTest(Component sutComponent, Component depComponent) {
-        logger.info("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°");
         Random testNumberGenerator = new Random();
         this.testNumber = testNumberGenerator.nextInt(Integer.MAX_VALUE) + 1;
 
@@ -32,12 +31,12 @@ abstract class BaseIntegrationTest {
         this.fileName = "Integrationtest-" + sutComponent.getName() + "-" + depComponent.getName() + "-" + testNumber + ".ts";
         this.filepath = depComponent.getComponentSourceCodeFilepath().substring(0, depComponent.getComponentSourceCodeFilepath().lastIndexOf("\\"));
 
-        logger.info("new Integrationtest");
+        logger.info("");
+        logger.info("CREATE NEW INTEGRATIONTEST NOW");
         logger.info("Name: " + this.sutComponent.getName() + "-" + this.depComponent.getName() + testNumber);
         logger.info("Integrationtest-Number: " + this.testNumber);
         logger.info("Filename: " + this.fileName);
         logger.info("FilePath: " + this.filepath);
-        logger.info("°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°°");
     }
 
     String getTestSuiteHeaderCode() {
@@ -89,9 +88,10 @@ abstract class BaseIntegrationTest {
     }
 
     public void printToFile(String content) {
-        System.out.println(this.filepath  + "\\integrationtest\\" + this.fileName);
+        logger.info("Save Integrationtest in directory: " + this.filepath  + "\\integrationtest\\" + this.fileName);
         File directory = new File(this.filepath  + "\\integrationtest\\");
         if (! directory.exists()){
+            logger.info("directory didnt exist - CREATED Directory");
             directory.mkdirs();
         }
 
@@ -99,6 +99,7 @@ abstract class BaseIntegrationTest {
         //Write Content
         try(FileWriter writer = new FileWriter(file)) {
             writer.write(content);
+            logger.info("SAVED");
         } catch (IOException e) {
             e.printStackTrace();
         }

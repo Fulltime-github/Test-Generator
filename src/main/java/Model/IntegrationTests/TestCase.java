@@ -14,7 +14,7 @@ public class TestCase {
     private String sutTestClassVarName;
 
     private int testCaseNumber = 0;
-    private final static Logger logger = Logger.getLogger(TestCase.class);
+    private final static Logger logger = Logger.getLogger("Generator");
 
     public TestCase(ComponentTest sutComponentTest, ComponentTest depComponentTest) {
         logger.info("==================================");
